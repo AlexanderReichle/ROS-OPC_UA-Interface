@@ -1,5 +1,5 @@
 # ROS-OPC_UA-Interface
-Simple Python Script that can communicate with OPC-Server over ROS-Services
+Simple Python Script that can communicate with an OPC-Server over ROS-Services
 
 # Installation
 1. Install FreeOpcUa Python from github.com/FreeOpcUa/freeopcua/tree/master/python
