@@ -28,21 +28,28 @@ def handle_request(req):
 
     # read
     if req.option == 'read':
-        # Get the Variable by Browsepath
-        myvar = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function), "2:%s" % (req.variable)])
-        # Get the Variable by NodeId
-        #myvar = client.get_node("ns=2;s=15892.local")
+        if req.cps != "":
+            # Get the Variable by Browsepath
+            myvar = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function), "2:%s" % (req.variable)])
+        elif req.cps == "":
+            # Get the Variable by NodeId
+            myvar = client.get_node("ns=2;%s" % req.variable)
+            #Example: myvar = client.get_node("ns=2;s=15892.local")
         #print myvar.get_data_value()
         responseValue = str(myvar.get_value())
         responseAnswer = "Read Suceeded"
     
     # write
     elif req.option == 'write':
-        # Get the Variable by Browsepath
-        myvar = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function), "2:%s" % (req.variable)])
-        # Get the Variable by NodeId
-        #myvar = client.get_node("ns=2;s=15892.local")
+        if req.cps != "":
+            # Get the Variable by Browsepath
+            myvar = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function), "2:%s" % (req.variable)])
+        elif req.cps == "":
+            # Get the Variable by NodeId
+            myvar = client.get_node("ns=2;%s" % req.variable)
+        # get Value to write
         inputValue = req.valueToWrite
+        # get expected Datatype
         dataType = str(myvar.get_data_value())
         # Write Boolean
         if dataType.find('Boolean') > 0:
@@ -62,12 +69,16 @@ def handle_request(req):
     
     # subscribe
     elif req.option == 'subscribe':
-        # Get the Variable by Browsepath
-        myvar = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function), "2:%s" % (req.variable)])
-        # Get the Variable by NodeId
-        #myvar = client.get_node("ns=2;s=15892.local")
+        if req.cps != "":
+            # Get the Variable by Browsepath
+            myvar = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function), "2:%s" % (req.variable)])
+        elif req.cps == "":
+            # Get the Variable by NodeId
+            myvar = client.get_node("ns=2;%s" % req.variable)
+            #Example: myvar = client.get_node("ns=2;s=15892.local")
         initialValue = str(myvar.get_value())
         actualValue = initialValue
+        # Read Value until the Value changes its status
         while initialValue == actualValue:
             actualValue = str(myvar.get_value())
         responseValue = actualValue
@@ -84,47 +95,70 @@ def handle_request(req):
 
     # call addPackage GESI-only
     elif req.option == 'addPackage':
-        # Get the Object by Browsepath
-        obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
-        # Get the Object by NodeId
-        #obj = client.get_node("ns=2;s=15892.local")
+        cps = str(req.cps)
+        if cps.find("=") < 0:
+            # Get the Object by Browsepath
+            obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+        elif cps.find("=") > 0:
+            # Get the Object by NodeId
+            obj = client.get_node("ns=2;%s" % (req.cps))   
         responseValue = obj.call_method("2:addPackage", "%s" % (req.function))
         responseAnswer = "Call addPackage Suceeded"    
 
     # call remPackage GESI-only
     elif req.option == 'remPackage':
-        # Get the Object by Browsepath
-        obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
-        # Get the Object by NodeId
-        #obj = client.get_node("ns=2;s=15892.local")
-        responseValue = obj.call_method("2:remPackage", "%s" % (req.function))
+        cps = str(req.cps)
+        if cps.find("=") < 0:
+            # Get the Object by Browsepath
+            obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+        elif cps.find("=") > 0:
+            # Get the Object by NodeId
+            obj = client.get_node("ns=2;%s" % (req.cps)) 
+        function = str(req.function)
+        # get Function in the right format
+        function = function[2:]
+        responseValue = obj.call_method("2:remPackage", "%s" % (function))
         responseAnswer = "Call remPackage Suceeded"     
 
     # login with __register()
     elif req.option == 'login':
         obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA"])
-        CPS_Id = str(req.cps)
+        cps = str(req.cps)
+        # get NodeId in the right format
+        CPS_Id = str(cps[2:])
+        # get all Nodes(CPS) that are registrated at the Server
         childNodes = str(obj.get_children())
+        # CPS not found
         if childNodes.find(CPS_Id) < 0:
             # Get the Object by Browsepath
             obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA"])
             # Get the Object by NodeId
             #obj = client.get_node("ns=2;s=15892.local")
             responseValue = obj.call_method("2:addCPS", "%s" % (req.displayName))
-            responseAnswer = "New CPS Has Been Created. Login Successful"   
+            responseAnswer = "New CPS Has Been Created. Login Successful"  
+        # CPS found     
         elif childNodes.find(CPS_Id) > 0:
             responseValue = CPS_Id
             responseAnswer = "CPS Already Exists. Login Successful"   
 
     # logout
     elif req.option == 'logout':
-        obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+        cps = str(req.cps)
+        if cps.find("=") < 0:
+            # Get the Object by Browsepath
+            obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+        elif cps.find("=") > 0:
+            # Get the Object by NodeId
+            obj = client.get_node("ns=2;%s" % (req.cps)) 
+        # get all registrated Functions    
         childNodes = str(obj.get_children())
         childNodesList = childNodes.split()
+        # extract Functions from Variables
         for i in childNodesList:
             if "." in i:
                 pass
             else:
+                # delet all Functions
                 startIndex = i.find(";s=")
                 NodeId = str(i[startIndex+3:startIndex+8])   
                 obj.call_method("2:remPackage", NodeId)
