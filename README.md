@@ -3,7 +3,7 @@ Simple Python Script that can communicate with an OPC-Server over ROS-Services
 
 # Installation
 1. Install FreeOpcUa Python from github.com/FreeOpcUa/freeopcua/tree/master/python
-2. Clone Folder "OPCService" in catkin_ws
+2. Clone Project into a new Folder and name it "OPCService" in catkin_ws
 3. Execute `catkin_make`
 
 # Basic Usage
