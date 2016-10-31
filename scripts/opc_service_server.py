@@ -164,8 +164,35 @@ def handle_request(req):
                 obj.call_method("2:remPackage", NodeId)
         responseValue = ""
         responseAnswer = "Logout Successful"
+
+    # get all Functions
+    elif req.option == 'getFunctions':
+        functionList = []
+        cps = str(req.cps)
+        if cps.find("=") < 0:
+            # Get the Object by Browsepath
+            obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+        elif cps.find("=") > 0:
+            # Get the Object by NodeId
+            obj = client.get_node("ns=2;%s" % (req.cps)) 
+        # get all registrated Functions    
+        childNodes = str(obj.get_children())
+        childNodesList = childNodes.split()
+        # extract Functions from Variables
+        for i in childNodesList:
+            if "." in i:
+                pass
+            else:
+                # delet all Functions
+                startIndex = i.find(";s=")
+                NodeId = str(i[startIndex+3:startIndex+8])
+                function = client.get_node("ns=2;s=%s" % NodeId)
+                function = str(function.get_browse_name())
+                function = function[16:23]    
+                functionList.append(function)   
+        responseValue = str(functionList)
+        responseAnswer = "getFunctions Suceeded"    
                     
-    
     # Not known option
     else:
         responseValue = ""
