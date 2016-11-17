@@ -95,15 +95,20 @@ def handle_request(req):
 
     # call addPackage GESI-only
     elif req.option == 'addPackage':
-        cps = str(req.cps)
-        if cps.find("=") < 0:
-            # Get the Object by Browsepath
-            obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
-        elif cps.find("=") > 0:
-            # Get the Object by NodeId
-            obj = client.get_node("ns=2;%s" % (req.cps))   
-        responseValue = obj.call_method("2:addPackage", "%s" % (req.function))
-        responseAnswer = "Call addPackage Suceeded"    
+        try:
+            function_Node = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function)])
+            responseValue = ""
+            responseAnswer = "Function Already Exists" 
+        except :
+            cps = str(req.cps)
+            if cps.find("=") < 0:
+                # Get the Object by Browsepath
+                obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+            elif cps.find("=") > 0:
+                # Get the Object by NodeId
+                obj = client.get_node("ns=2;%s" % (req.cps))
+            responseValue = obj.call_method("2:addPackage", "%s" % (req.function))
+            responseAnswer = "Call addPackage Suceeded"     
 
     # call remPackage GESI-only
     elif req.option == 'remPackage':
@@ -111,12 +116,33 @@ def handle_request(req):
         if cps.find("=") < 0:
             # Get the Object by Browsepath
             obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+            function = str(req.function)
+            if function.find("=") < 0:
+                function_Node = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function)])
+                browseName = str(function_Node.get_browse_name)
+                browseName = browseName.split()
+                for i in browseName:
+                    startIndex = i.find(";s=")
+                    function = str(i[startIndex+3:startIndex+8])
+            elif function.find("=") > 0:
+                # get Function in the right format
+                function = function[2:]    
         elif cps.find("=") > 0:
             # Get the Object by NodeId
+            cps = str(req.cps)
             obj = client.get_node("ns=2;%s" % (req.cps)) 
-        function = str(req.function)
-        # get Function in the right format
-        function = function[2:]
+            function = str(req.function)
+            if function.find("=") < 0:
+                #function_Node = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps), "2:%s" % (req.function)])
+                function_Node = obj.get_child(["2:%s" % (req.function)])
+                browseName = str(function_Node.get_browse_name)
+                browseName = browseName.split()
+                for i in browseName:
+                    startIndex = i.find(";s=")
+                    function = str(i[startIndex+3:startIndex+8])
+            elif function.find("=") > 0:
+                # get Function in the right format
+                function = function[2:] 
         responseValue = obj.call_method("2:remPackage", "%s" % (function))
         responseAnswer = "Call remPackage Suceeded"     
 
@@ -191,7 +217,46 @@ def handle_request(req):
                 function = function[16:23]    
                 functionList.append(function)   
         responseValue = str(functionList)
-        responseAnswer = "getFunctions Suceeded"    
+        responseAnswer = "getFunctions Suceeded"  
+
+    # Remove CPS
+    elif req.option == 'remCPS':
+        obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA"])
+        childNodes = str(obj.get_children())
+        cps = str(req.cps)
+        CPS_Id = str(cps[2:])
+        # Check if CPS does exist
+        if childNodes.find(CPS_Id) > 0:
+            # remove all Functions (Packages)
+            #cps = str(req.cps)
+            if cps.find("=") < 0:
+                # Get the Object by Browsepath
+                obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA", "2:%s" % (req.cps)])
+            elif cps.find("=") > 0:
+                # Get the Object by NodeId
+                obj = client.get_node("ns=2;%s" % (req.cps)) 
+            # get all registrated Functions    
+            childNodes = str(obj.get_children())
+            childNodesList = childNodes.split()
+            # extract Functions from Variables
+            for i in childNodesList:
+                if "." in i:
+                    pass
+                else:
+                    # delet all Functions
+                    startIndex = i.find(";s=")
+                    NodeId = str(i[startIndex+3:startIndex+8])   
+                    obj.call_method("2:remPackage", NodeId)
+
+            # Get the Object by Browsepath
+            obj = root.get_child(["0:Objects", "2:GESI", "2:ARENA"])
+            # remove CPS
+            obj.call_method("2:remCPS", "%s" % (CPS_Id))
+            responseValue = ""
+            responseAnswer = "CPS Has Been Deleted"
+        elif childNodes.find(CPS_Id) < 0: 
+            responseValue = ""
+            responseAnswer = "CPS Does Not Exist"              
                     
     # Not known option
     else:
@@ -215,4 +280,3 @@ def opc_service_server():
 
 if __name__ == "__main__":
     opc_service_server()
-
