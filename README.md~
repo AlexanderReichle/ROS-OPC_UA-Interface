@@ -26,4 +26,3 @@ Get available Functions: `rosservice call /opc_service "{option: 'getFunctions',
 Get available Functions: `rosservice call /opc_service "{option: 'getFunctions', cps: 's=16145', function: '', variable: '', valueToWrite: '', displayName: ''}"`  
 Logout: `rosservice call /opc_service "{option: 'logout', cps: 'iiwa-1', function: '', variable: '', valueToWrite: '', displayName: ''}"`  
 Logout: `rosservice call /opc_service "{option: 'logout', cps: 's=16145', function: '', variable: '', valueToWrite: '', displayName: ''}"`  
-Remove CPS: `rosservice call /opc_service "{option: 'remCPS', cps: 's=16145', function: '', variable: '', valueToWrite: '', displayName: ''}"`  
